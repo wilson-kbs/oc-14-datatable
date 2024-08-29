@@ -1,0 +1,202 @@
+import styles from "./DataTable.module.css";
+import { FC, useEffect, useMemo, useState } from "react";
+
+import SortASC from "./assets/sort_asc.png";
+import SortDESC from "./assets/sort_desc.png";
+import SortBoth from "./assets/sort_both.png";
+
+import SelectEntryNumber from "./components/SelectEntryNumber/SelectEntryNumber.tsx";
+import SearchDataTable from "./components/SearchDataTable/SearchDataTable.tsx";
+import PaginationDataTable from "./components/PaginationDataTable/PaginationDataTable.tsx";
+import { DataType } from "./types/DataType.ts";
+import { useSearch } from "./hooks/useSearch.ts";
+import { isValidSearch } from "./utils/isValidSearch.ts";
+
+const SortIconStyle = (direction: "asc" | "desc" | "both" = "both") => {
+  const icon = {
+    asc: SortASC,
+    desc: SortDESC,
+    both: SortBoth,
+  }[direction];
+
+  return {
+    backgroundImage: `url(${icon})`,
+  };
+};
+
+export type Column = {
+  title: string;
+  data: string;
+};
+
+type Sort = {
+  column: string;
+  direction: "asc" | "desc";
+};
+
+export interface DataTableProps {
+  columns: Column[];
+  data: DataType[];
+}
+
+const calculateColumnsSize = (
+  columns: Column[],
+  data: DataType[],
+): number[] => {
+  return columns.map((column) => {
+    const maxLength = data.reduce((max, row) => {
+      const value = row[column.data]?.toString() || "";
+      return Math.max(max, value.length);
+    }, column.title.length);
+
+    return maxLength * 8 + 40;
+  });
+};
+
+const DataTable: FC<DataTableProps> = ({ columns, data }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [countPages, setCountPages] = useState(0);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<Sort>({
+    column: columns[0].data,
+    direction: "asc",
+  });
+  const columnsSize = useMemo(
+    () => calculateColumnsSize(columns, data),
+    [columns, data],
+  );
+
+  const filteredData = useSearch(data, search);
+
+  const sortedData = useMemo(() => {
+    const column = columns.find((c) => c.data === sort.column);
+    if (!column) {
+      return filteredData;
+    }
+
+    const sorted = [...filteredData].sort((a, b) => {
+      const aData = a[column.data]?.toString();
+      const bData = b[column.data]?.toString();
+      if (aData === bData) {
+        return 0;
+      } else if (!aData) {
+        return -1;
+      } else if (!bData) {
+        return 1;
+      } else {
+        return aData.localeCompare(bData);
+      }
+    });
+
+    return sort.direction === "asc" ? sorted : sorted.reverse();
+  }, [columns, filteredData, sort.column, sort.direction]);
+
+  useEffect(() => {
+    setCountPages(Math.ceil(filteredData.length / entriesPerPage));
+  }, [filteredData, entriesPerPage]);
+
+  const { start, end, renderItems } = useMemo(() => {
+    const start = (currentPage - 1) * entriesPerPage;
+    const end = start + entriesPerPage;
+    return {
+      start: start + 1,
+      end: Math.min(end, sortedData.length),
+      renderItems: sortedData.slice(start, end),
+    };
+  }, [currentPage, entriesPerPage, sortedData]);
+
+  const onEntriesChange = (value: number) => {
+    setEntriesPerPage(value);
+    setCurrentPage(1);
+  };
+
+  const onSearch = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
+
+  const onPaginationChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const onSort = (column: string) => {
+    if (sort.column === column) {
+      setSort({
+        column,
+        direction: sort.direction === "asc" ? "desc" : "asc",
+      });
+    } else {
+      setSort({ column, direction: "asc" });
+    }
+  };
+
+  return (
+    <div
+      className={styles.DataTable_Wrapper}
+      style={{
+        width: columnsSize.reduce((acc, size) => acc + size, 0) + "px",
+      }}
+    >
+      <div className={styles.DataTable_Wrapper_Header}>
+        <SelectEntryNumber onSelect={onEntriesChange} />
+        <SearchDataTable onChange={onSearch} />
+      </div>
+
+      <table className={styles.DataTable}>
+        <thead>
+          <tr className={styles.DataTable_Header_Row}>
+            {columns.map((column) => (
+              <th
+                className={styles.DataTable_Header_Cell}
+                key={column.data}
+                style={{
+                  ...(sort.column === column.data
+                    ? SortIconStyle(sort.direction)
+                    : SortIconStyle()),
+                  width: columnsSize[columns.indexOf(column)] + "px",
+                }}
+                onClick={() => onSort(column.data)}
+              >
+                {column.title}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className={styles.DataTable_Body}>
+          {renderItems.map((row, index) => (
+            <tr key={index}>
+              {columns.map((column) => (
+                <td
+                  className={`${styles.DataTable_Body_Cell} ${column.data === sort.column ? styles.Sorterd : ""}`}
+                  key={column.data}
+                >
+                  {row[column.data]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className={styles.DataTable_Footer}>
+        <div>
+          <span>
+            Showing {start} to {end} of {filteredData.length} entries
+          </span>
+          {isValidSearch(search) && (
+            <span> (filtered from {data.length} total entries)</span>
+          )}
+        </div>
+        {countPages > 1 && (
+          <PaginationDataTable
+            total={countPages}
+            current={currentPage}
+            onChange={onPaginationChange}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default DataTable;
