@@ -1,7 +1,7 @@
 {
   "name": "@wilson-kbs/oc-14-datatable",
   "description": "A simple data table component for React",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -16,10 +16,13 @@
   "exports": {
     ".": {
       "import": "./dist/data-table.es.js",
-      "require": "./dist/data-table.umd.js"
+      "require": "./dist/data-table.umd.js",
+      "types": "./dist/DataTable.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "antd": "^5.20.3",
     "react": "^18.3.1",
