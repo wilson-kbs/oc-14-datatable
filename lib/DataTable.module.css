@@ -87,3 +87,9 @@
   background-repeat: no-repeat;
   background-position: center right;
 }
+
+.DataTable_Footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
