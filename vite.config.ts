@@ -10,7 +10,6 @@ export default defineConfig({
     libInjectCss(),
     dts({
       tsconfigPath: "./tsconfig.lib.json",
-      rollupTypes: true,
     }),
   ],
   build: {

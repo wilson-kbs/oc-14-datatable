@@ -12,12 +12,12 @@
   },
   "main": "./dist/data-table.umd.js",
   "module": "./dist/data-table.es.js",
-  "types": "./dist/DataTable.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/data-table.es.js",
       "require": "./dist/data-table.umd.js",
-      "types": "./dist/DataTable.d.ts"
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
