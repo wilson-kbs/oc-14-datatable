@@ -1,59 +1,45 @@
 import styles from "./DataTable.module.css";
 import { FC, useEffect, useMemo, useState } from "react";
-
-import SortASC from "./assets/sort_asc.png";
-import SortDESC from "./assets/sort_desc.png";
-import SortBoth from "./assets/sort_both.png";
-
 import SelectEntryNumber from "./components/SelectEntryNumber/SelectEntryNumber.tsx";
 import SearchDataTable from "./components/SearchDataTable/SearchDataTable.tsx";
 import PaginationDataTable from "./components/PaginationDataTable/PaginationDataTable.tsx";
-import { DataType } from "./types/DataType.ts";
+import { Column, DataType, Sort } from "./types";
 import { useSearch } from "./hooks/useSearch.ts";
-import { isValidSearch } from "./utils/isValidSearch.ts";
+import { calculateColumnsSize, getSortIconStyle, isValidSearch } from "./utils";
 
-const SortIconStyle = (direction: "asc" | "desc" | "both" = "both") => {
-  const icon = {
-    asc: SortASC,
-    desc: SortDESC,
-    both: SortBoth,
-  }[direction];
+type FilteredResult = {
+  /**
+   * The start index of the current page.
+   */
+  start: number;
 
-  return {
-    backgroundImage: `url(${icon})`,
-  };
-};
+  /**
+   * The end index of the current page.
+   */
+  end: number;
 
-export type Column = {
-  title: string;
-  data: string;
-};
-
-type Sort = {
-  column: string;
-  direction: "asc" | "desc";
+  /**
+   * The items to render on the current page.
+   */
+  renderItems: DataType[];
 };
 
 export interface DataTableProps {
+  /**
+   * Columns to display in the table
+   */
   columns: Column[];
+
+  /**
+   * Data to display in the table
+   */
   data: DataType[];
 }
 
-const calculateColumnsSize = (
-  columns: Column[],
-  data: DataType[],
-): number[] => {
-  return columns.map((column) => {
-    const maxLength = data.reduce((max, row) => {
-      const value = row[column.data]?.toString() || "";
-      return Math.max(max, value.length);
-    }, column.title.length);
-
-    return maxLength * 8 + 40;
-  });
-};
-
-const DataTable: FC<DataTableProps> = ({ columns, data }) => {
+/**
+ * DataTable component for displaying data in a table format with pagination, sorting, and search functionality.
+ */
+export const DataTable: FC<DataTableProps> = ({ columns, data }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [countPages, setCountPages] = useState(0);
@@ -69,6 +55,15 @@ const DataTable: FC<DataTableProps> = ({ columns, data }) => {
 
   const filteredData = useSearch(data, search);
 
+  useEffect(() => {
+    setCountPages(Math.ceil(filteredData.length / entriesPerPage));
+  }, [filteredData, entriesPerPage]);
+
+  /**
+   * Memoized function to sort the filtered data based on the selected column and direction.
+   *
+   * @returns {DataType[]} - The sorted data.
+   */
   const sortedData = useMemo(() => {
     const column = columns.find((c) => c.data === sort.column);
     if (!column) {
@@ -92,11 +87,11 @@ const DataTable: FC<DataTableProps> = ({ columns, data }) => {
     return sort.direction === "asc" ? sorted : sorted.reverse();
   }, [columns, filteredData, sort.column, sort.direction]);
 
-  useEffect(() => {
-    setCountPages(Math.ceil(filteredData.length / entriesPerPage));
-  }, [filteredData, entriesPerPage]);
-
-  const { start, end, renderItems } = useMemo(() => {
+  /**
+   * Memoized function to calculate the start and end indices for the current page,
+   * and to slice the sorted data to get the items to render.
+   */
+  const { start, end, renderItems }: FilteredResult = useMemo(() => {
     const start = (currentPage - 1) * entriesPerPage;
     const end = start + entriesPerPage;
     return {
@@ -106,7 +101,7 @@ const DataTable: FC<DataTableProps> = ({ columns, data }) => {
     };
   }, [currentPage, entriesPerPage, sortedData]);
 
-  const onEntriesChange = (value: number) => {
+  const onShowNumberOfEntriesChange = (value: number) => {
     setEntriesPerPage(value);
     setCurrentPage(1);
   };
@@ -139,7 +134,7 @@ const DataTable: FC<DataTableProps> = ({ columns, data }) => {
       }}
     >
       <div className={styles.DataTable_Wrapper_Header}>
-        <SelectEntryNumber onSelect={onEntriesChange} />
+        <SelectEntryNumber onSelect={onShowNumberOfEntriesChange} />
         <SearchDataTable onChange={onSearch} />
       </div>
 
@@ -152,8 +147,8 @@ const DataTable: FC<DataTableProps> = ({ columns, data }) => {
                 key={column.data}
                 style={{
                   ...(sort.column === column.data
-                    ? SortIconStyle(sort.direction)
-                    : SortIconStyle()),
+                    ? getSortIconStyle(sort.direction)
+                    : getSortIconStyle()),
                   width: columnsSize[columns.indexOf(column)] + "px",
                 }}
                 onClick={() => onSort(column.data)}

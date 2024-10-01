@@ -1,7 +1,12 @@
-import { isValidSearch } from "../utils/isValidSearch.ts";
-import { DataType } from "../types/DataType.ts";
-import { normalize } from "../utils/normalize.ts";
+import {DataType} from "../types";
+import {isValidSearch, normalize} from "../utils";
 
+/**
+ * Custom hook for searching through data
+ * @param data - The data to search through
+ * @param search - The search query string
+ * @returns The filtered data based on the search query
+ */
 export const useSearch = (data: DataType[], search: string) => {
   if (!isValidSearch(search)) {
     return data;

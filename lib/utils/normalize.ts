@@ -1,3 +1,14 @@
+/**
+ * Normalizes the input string by:
+ * - Decomposing combined graphemes into their constituent parts (NFD normalization).
+ * - Removing diacritical marks (accents).
+ * - Converting to lowercase.
+ * - Trimming whitespace from both ends.
+ * - Replacing non-alphanumeric characters with hyphens.
+ *
+ * @param {string} input - The input string to normalize.
+ * @returns {string} - The normalized string.
+ */
 export function normalize(input: string): string {
   return input
     .normalize("NFD")

@@ -1,3 +1,6 @@
-export { default as DataTable } from "./DataTable";
-export type { DataTableProps, Column } from "./DataTable";
-export type { DataType } from "./types/DataType";
+import { Column, DataType } from "./types";
+import { DataTable } from "./DataTable";
+
+export type { DataType, Column };
+export { DataTable };
+export default DataTable;
