@@ -92,6 +92,14 @@ export const DataTable: FC<DataTableProps> = ({ columns, data }) => {
    * and to slice the sorted data to get the items to render.
    */
   const { start, end, renderItems }: FilteredResult = useMemo(() => {
+    if (sortedData.length === 0) {
+      return {
+        start: 0,
+        end: 0,
+        renderItems: [],
+      };
+    }
+
     const start = (currentPage - 1) * entriesPerPage;
     const end = start + entriesPerPage;
     return {
@@ -171,6 +179,16 @@ export const DataTable: FC<DataTableProps> = ({ columns, data }) => {
               ))}
             </tr>
           ))}
+          {renderItems.length === 0 && (
+            <tr>
+              <td
+                className={`${styles.DataTable_Body_Cell} ${styles.DataTable_Body_Cell_Empty}`}
+                colSpan={columns.length}
+              >
+                No data available in table
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
       <div className={styles.DataTable_Footer}>
