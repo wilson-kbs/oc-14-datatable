@@ -1,8 +1,22 @@
-import DataTable from "../lib/DataTable";
+import DataTable, { DataType } from "../lib";
 import styles from "./App.module.css";
-import data from "./data/employees-900.json";
+import dataUrl from "./data/employees-900.json?url";
+import { useEffect, useState } from "react";
 
 function App() {
+  const [data, setData] = useState<DataType[] | null>(null);
+
+  useEffect(() => {
+    fetch(dataUrl)
+      .then((response) => response.json())
+      .then((jsonData) => {
+        setData(jsonData);
+      })
+      .catch((error) => {
+        console.error("Erreur lors du chargement du fichier JSON:", error);
+      });
+  }, []);
+
   const columns = [
     { title: "First Name", data: "firstName" },
     { title: "Last Name", data: "lastName" },
@@ -14,12 +28,15 @@ function App() {
     { title: "State", data: "state" },
     { title: "Zip Code", data: "zipCode" },
   ];
-  console.log(data.length);
 
   return (
     <div className={styles.Container}>
       <h1>DataTable demo</h1>
-      <DataTable columns={columns} data={data} />,
+      {data ? (
+        <DataTable columns={columns} data={data} />
+      ) : (
+        <p>Chargement des données...</p>
+      )}
     </div>
   );
 }
